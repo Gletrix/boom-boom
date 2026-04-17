@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime 2D Game</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #87ceeb; }
+        #root { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        canvas { border: 2px solid #333; background: linear-gradient(to bottom, #87ceeb 60%, #228b22 60%); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function AnimeGame() {
+            const canvasRef = useRef(null);
+            const [charPos, setCharPos] = useState({ x: 200, y: 300 });
+            const [keys, setKeys] = useState({});
+            const animationRef = useRef(0);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => setKeys(prev => ({ ...prev, [e.key]: true }));
+                const handleKeyUp = (e) => setKeys(prev => ({ ...prev, [e.key]: false }));
+                window.addEventListener('keydown', handleKeyDown);
+                window.addEventListener('keyup', handleKeyUp);
+                return () => {
+                    window.removeEventListener('keydown', handleKeyDown);
+                    window.removeEventListener('keyup', handleKeyUp);
+                };
+            }, []);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+
+                const drawGrass = () => {
+                    ctx.fillStyle = '#228b22';
+                    ctx.fillRect(0, 300, canvas.width, canvas.height);
+                    for (let i = 0; i < 20; i++) {
+                        ctx.fillStyle = '#1a6b1a';
+                        ctx.fillRect(Math.random() * canvas.width, 300 + Math.random() * 100, 3, 15);
+                    }
+                };
+
+                const drawCharacter = (x, y, legSwing) => {
+                    // Head
+                    ctx.fillStyle = '#f4a460';
+                    ctx.beginPath();
+                    ctx.arc(x, y - 50, 20, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Eyes (anime style)
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(x - 7, y - 55, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x + 7, y - 55, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Shine in eyes
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(x - 5, y - 57, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x + 9, y - 57, 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Body
+                    ctx.fillStyle = '#ff69b4';
+                    ctx.fillRect(x - 15, y - 30, 30, 35);
+
+                    // Left Arm
+                    ctx.strokeStyle = '#f4a460';
+                    ctx.lineWidth = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 15, y - 15);
+                    const leftSwing = Math.sin(legSwing) * 15;
+                    ctx.lineTo(x - 30 + leftSwing, y - 5);
+                    ctx.stroke();
+
+                    // Right Arm
+                    ctx.beginPath();
+                    ctx.moveTo(x + 15, y - 15);
+                    ctx.lineTo(x + 30 - leftSwing, y - 5);
+                    ctx.stroke();
+
+                    // Left Leg
+                    const legOffset = Math.sin(legSwing) * 10;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 8, y + 5);
+                    ctx.lineTo(x - 8 + legOffset, y + 30);
+                    ctx.stroke();
+
+                    // Right Leg
+                    ctx.beginPath();
+                    ctx.moveTo(x + 8, y + 5);
+                    ctx.lineTo(x + 8 - legOffset, y + 30);
+                    ctx.stroke();
+                };
+
+                const animate = () => {
+                    ctx.fillStyle = '#87ceeb';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    drawGrass();
+
+                    let newX = charPos.x;
+                    if (keys['ArrowLeft'] || keys['a']) newX -= 5;
+                    if (keys['ArrowRight'] || keys['d']) newX += 5;
+                    newX = Math.max(30, Math.min(canvas.width - 30, newX));
+
+                    setCharPos({ x: newX, y: charPos.y });
+
+                    const legSwing = animationRef.current * 0.1;
+                    drawCharacter(newX, charPos.y, legSwing);
+
+                    animationRef.current++;
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+            }, [charPos, keys]);
+
+            return <canvas ref={canvasRef} width={800} height={600} />;
+        }
+
+        ReactDOM.render(<AnimeGame />, document.getElementById('root'));
+    </script>
+</body>
+</html>
